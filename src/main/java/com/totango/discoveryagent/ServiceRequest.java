@@ -2,8 +2,6 @@ package com.totango.discoveryagent;
 
 import java.util.Objects;
 
-import com.google.common.base.Preconditions;
-
 public class ServiceRequest {
 
   private String serviceName; 
@@ -74,7 +72,9 @@ public class ServiceRequest {
     }
     
     public ServiceRequest build() {
-      Preconditions.checkNotNull(serviceName, "Service Name is mandatory");
+      if (serviceName == null) {
+        throw new NullPointerException(String.valueOf("Service Name is mandatory"));
+      }
       return new ServiceRequest(serviceName, index, tag);
     }
   }
