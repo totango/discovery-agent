@@ -96,6 +96,31 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>2.11</version>
+				<configuration>
+					<header>license-header.txt</header>
+					<properties>
+						<owner>${project.organization.name}</owner>
+					</properties>
+					<excludes>
+						<exclude>**/README</exclude>
+						<exclude>**/LICENSE.txt</exclude>
+						<exclude>**/pom.xml</exclude>
+						<exclude>src/test/resources/**</exclude>
+						<exclude>src/main/resources/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
