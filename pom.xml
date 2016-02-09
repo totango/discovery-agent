@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.totango</groupId>
 	<artifactId>discovery-agent</artifactId>
-	<version>0.1.0</version>
+	<version>0.1.1-SNAPSHOT</version>
 
 	<name>Discovery Agent</name>
 	<description>Reactive client for consul.io written in java 8.</description>
