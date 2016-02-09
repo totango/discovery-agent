@@ -20,16 +20,35 @@
 
     <section class="main-content">
       <h1>
-<a id="discovery-agent" class="anchor" href="#discovery-agent" aria-hidden="true"><span class="octicon octicon-link"></span></a>discovery-agent</h1>
+<a id="discovery-agent" class="anchor" href="#discovery-agent" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>discovery-agent</h1>
 
 <h1></h1>
 
-<p>Reactive Consul client written in java 8</p>
-
-<p>ConsulClient is a HTTP client for Consul HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  </p>
+<p>Reactive <a href="http://www.consul.io">Consul</a> client written in java 8</p>
 
 <h2>
-<a id="consulclient" class="anchor" href="#consulclient" aria-hidden="true"><span class="octicon octicon-link"></span></a>ConsulClient</h2>
+<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup</h2>
+
+<p>maven</p>
+
+<div class="highlight highlight-text-xml"><pre>
+  &lt;<span class="pl-ent">dependency</span>&gt;
+    &lt;<span class="pl-ent">groupId</span>&gt;com.totango&lt;/<span class="pl-ent">groupId</span>&gt;
+    &lt;<span class="pl-ent">artifactId</span>&gt;discovery-agent&lt;/<span class="pl-ent">artifactId</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;0.1.0&lt;/<span class="pl-ent">version</span>&gt;
+  &lt;/<span class="pl-ent">dependency</span>&gt;
+</pre></div>
+
+<p>gradle</p>
+
+<pre><code>'com.totango:discovery-agent:0.1.0'
+
+</code></pre>
+
+<h2>
+<a id="consulclient" class="anchor" href="#consulclient" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ConsulClient</h2>
+
+<p>ConsulClient is a HTTP client for <a href="http://www.consul.io">Consul</a> HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  </p>
 
 <p>By default ConsulClient connects to Consul agent on localhost and port 8500.</p>
 
@@ -55,7 +74,7 @@
     <span class="pl-k">Optional&lt;<span class="pl-smi">ServiceGroup</span>&gt;</span> response <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>discoverService(serviceRequest);
 </pre></div>
 
-<p>You can then use the response to make calls to you service.</p>
+<p>You can then use the response to make calls to the service.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-k">if</span> (response<span class="pl-k">.</span>isPresent() <span class="pl-k">&amp;&amp;</span> response<span class="pl-k">.</span>get()<span class="pl-k">.</span>size() <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>) {
@@ -109,7 +128,7 @@
 </pre></div>
 
 <h2>
-<a id="discoveryservice" class="anchor" href="#discoveryservice" aria-hidden="true"><span class="octicon octicon-link"></span></a>DiscoveryService</h2>
+<a id="discoveryservice" class="anchor" href="#discoveryservice" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>DiscoveryService</h2>
 
 <p>Listen for updates is very useful but require some work. This is why we have the DiscoveryService class.
 DiscoveryService is a class that helps you register for service updates.
@@ -149,7 +168,7 @@ When you create DiscoveryService instance you need to provide a ConsulClient, nu
 <p>DiscoveryService works with RxJava so you can subscribe to update using Subscriber, Observer and Action. </p>
 
 <h2>
-<a id="roundrobinloadbalancer" class="anchor" href="#roundrobinloadbalancer" aria-hidden="true"><span class="octicon octicon-link"></span></a>RoundRobinLoadBalancer</h2>
+<a id="roundrobinloadbalancer" class="anchor" href="#roundrobinloadbalancer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>RoundRobinLoadBalancer</h2>
 
 <p>One of the things you can do when you have multiple instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
 For this functionality we have The RoundRobinLoadBalancer.
@@ -174,24 +193,24 @@ The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the m
 </pre></div>
 
 <h2>
-<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
 
-<h1></h1>
+<pre><code>
+   Copyright 2015 Totango, Inc
 
-<p>Copyright 2015 Totango, Inc</p>
-
-<p>Licensed under the Apache License, Version 2.0 (the "License");
+   Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at</p>
+   You may obtain a copy of the License at
 
-<pre><code>http://www.apache.org/licenses/LICENSE-2.0
-</code></pre>
+    http://www.apache.org/licenses/LICENSE-2.0
 
-<p>Unless required by applicable law or agreed to in writing, software
+   Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
-   limitations under the License.</p>
+   limitations under the License.
+
+</code></pre>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/totango/discovery-agent">Discovery-agent</a> is maintained by <a href="https://github.com/totango">totango</a>.</span>
