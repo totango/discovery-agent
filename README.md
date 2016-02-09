@@ -1,5 +1,4 @@
 # discovery-agent
-===============
 
 Reactive [Consul](http://www.consul.io) client written in java 8
 
@@ -78,7 +77,7 @@ You can get a healthy service with name and tag.
 
 ```java
 
-	String tag = "master;
+	String tag = "master";
 	
 	ServiceRequest serviceRequest = Service.request()
 		.forService(serviceName)
@@ -91,7 +90,7 @@ You can also listen for service updates using the index of the last results. The
 
 ```java
 
-	String tag = "master;
+	String tag = "master";
 	
 	ServiceRequest serviceRequest = Service.request()
 		.forService(serviceName)
