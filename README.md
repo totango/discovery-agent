@@ -1,11 +1,28 @@
 # discovery-agent
 ===============
 
-Reactive Consul client written in java 8
+Reactive [Consul](http://www.consul.io) client written in java 8
 
-ConsulClient is a HTTP client for Consul HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  
+##Setup
+maven
+```xml
+
+  <dependency>
+    <groupId>com.totango</groupId>
+    <artifactId>discovery-agent</artifactId>
+    <version>0.1.0</version>
+  </dependency>
+
+```
+gradle
+```
+'com.totango:discovery-agent:0.1.0'
+
+```
 
 ## ConsulClient
+ConsulClient is a HTTP client for [Consul](http://www.consul.io) HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  
+
 By default ConsulClient connects to Consul agent on localhost and port 8500.
 
 ```java
@@ -36,7 +53,7 @@ Get a list of healthy services
 	
 ```
 
-You can then use the response to make calls to you service.
+You can then use the response to make calls to the service.
 
 ```java
 
@@ -175,7 +192,8 @@ To use the LoadBalancer you need to call the withNextEndpoint() method with a fu
 
 
 ## License
-=======
+
+```
 
    Copyright 2015 Totango, Inc
 
@@ -190,3 +208,5 @@ To use the LoadBalancer you need to call the withNextEndpoint() method with a fu
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+```
