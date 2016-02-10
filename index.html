@@ -55,7 +55,7 @@
 <h2>
 <a id="consulclient" class="anchor" href="#consulclient" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ConsulClient</h2>
 
-<p>ConsulClient is a HTTP client for <a href="http://www.consul.io">Consul</a> HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  </p>
+<p>ConsulClient is a HTTP client for <a href="http://www.consul.io">Consul</a>. You can either choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand which class to use when.  </p>
 
 <p>By default ConsulClient connects to Consul agent on localhost and port 8500.</p>
 
@@ -111,7 +111,7 @@
         .build();
 </pre></div>
 
-<p>You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as describes in the Consul api which is 5 min (<a href="https://www.consul.io/docs/agent/http.html">https://www.consul.io/docs/agent/http.html</a>).</p>
+<p>You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as described in the <a href="https://www.consul.io/docs/agent/http.html">Consul api</a> which is 5 min.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-smi">String</span> tag <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>master<span class="pl-pds">"</span></span>;
@@ -122,13 +122,13 @@
         .build();
 </pre></div>
 
-<p>ConsulClient can also calls the Consul key-value api.</p>
+<p>ConsulClient can also call the Consul key-value api.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key);
 </pre></div>
 
-<p>To listen for a key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as describes in the Consul api which is 5 min (<a href="https://www.consul.io/docs/agent/http.html">https://www.consul.io/docs/agent/http.html</a>).</p>
+<p>To listen for key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as described in the <a href="https://www.consul.io/docs/agent/http.html">Consul api</a> which is 5 min.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key, index);
@@ -137,9 +137,9 @@
 <h2>
 <a id="discoveryservice" class="anchor" href="#discoveryservice" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>DiscoveryService</h2>
 
-<p>Listen for updates is very useful but require some work. This is why we have the DiscoveryService class.
+<p>Listen for updates is very useful but requires some work. This is why we have the DiscoveryService class.
 DiscoveryService is a class that helps you register for service updates.
-When you create DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fails and function which will provide the delay in milliseconds between the retries</p>
+When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.</p>
 
 <p>Here is an example of a DiscoveryService with 10 retries. The retry function is a 1 - 10 series.</p>
 
@@ -147,13 +147,13 @@ When you create DiscoveryService instance you need to provide a ConsulClient, nu
     <span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-c1">10</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> i);
 </pre></div>
 
-<p>The retry in this example is the number of retry in the power of 3.</p>
+<p>The retry in this example is the number of retry to the power of 3.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-c1">10</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> (<span class="pl-k">int</span>)<span class="pl-smi">Math</span><span class="pl-k">.</span>pow(i, <span class="pl-c1">3</span>));
 </pre></div>
 
-<p>To subscribe for updates you need provide the service name and an Action to be perform when there is an update.</p>
+<p>To subscribe for updates you need to provide the service name and an Action to be performed when there is an update.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
@@ -161,7 +161,7 @@ When you create DiscoveryService instance you need to provide a ConsulClient, nu
     });
 </pre></div>
 
-<p>If you want to take an Action on errors you can provide additional Action.</p>
+<p>If you want to take an action on errors you can provide an additional Action.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
@@ -179,7 +179,7 @@ When you create DiscoveryService instance you need to provide a ConsulClient, nu
 
 <p>One of the things you can do when you have multiple instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
 For this functionality we have The RoundRobinLoadBalancer.
-The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list so when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.</p>
+The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list. So when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.</p>
 
 <div class="highlight highlight-source-java"><pre>
     <span class="pl-smi">RoundRobinLoadBalancer</span> balancer <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">RoundRobinLoadBalancer</span>(discoveryService, serviceName);
