@@ -29,8 +29,8 @@ import java.util.function.BiConsumer;
 
 import org.junit.Test;
 
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import com.totango.discoveryagent.model.Service;
 import com.totango.discoveryagent.model.ServiceGroup;
 import com.totango.discoveryagent.model.Value;

@@ -16,9 +16,10 @@
  */
 package com.totango.discoveryagent;
 
+import okhttp3.OkHttpClient;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.squareup.okhttp.OkHttpClient;
 import com.totango.discoveryagent.gson.ServiceDeserializer;
 import com.totango.discoveryagent.gson.ValueDeserializer;
 import com.totango.discoveryagent.model.Service;

@@ -21,11 +21,12 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
 import com.totango.discoveryagent.model.Service;
 import com.totango.discoveryagent.model.ServiceGroup;
 import com.totango.discoveryagent.model.Value;
