@@ -54,11 +54,15 @@ public class DiscoveryService {
   private int retry;
 
   private Func1<Integer, Integer> delayFunc;
+
+  private TimeUnit delayTimeUnit;
   
-  public DiscoveryService(ConsulClient consulClient, int retry, Func1<Integer, Integer> delayFunc) {
+  public DiscoveryService(ConsulClient consulClient, int retry, Func1<Integer, Integer> delayFunc,
+      TimeUnit delayTimeUnit) {
     this.consulClient = consulClient;
     this.retry = retry;
     this.delayFunc = delayFunc;
+    this.delayTimeUnit = delayTimeUnit;
   }
 
   public List<Service> getServices(String serviceName) throws IOException {
@@ -108,44 +112,45 @@ public class DiscoveryService {
   }
 
   private Observable<List<Service>> createServiceObservable(String serviceName) {
+    
     //  Casting is needed because of a known bug in javac
     Observable<List<Service>> observable = Observable.create((OnSubscribe<List<Service>>)(subscriber) -> {
 
-      ServiceGroup lastServiceGroup = null;
-      
-      while(true) {
-        try {
-          String serviceIndex = getServiceIndex(serviceName).orElse("0");
-          ServiceRequest serviceRequest = request()
-              .forService(serviceName)
-              .lastUpdateIndex(serviceIndex).build();
+      try {  
+        
+        String serviceIndex = getServiceIndex(serviceName).orElse("0");
+        ServiceRequest serviceRequest = request()
+            .forService(serviceName)
+            .lastUpdateIndex(serviceIndex).build();
+        
+        Optional<ServiceGroup> serviceGroupOpt = consulClient.discoverService(serviceRequest);
+        
+        serviceGroupOpt.ifPresent(sGroup -> {
+          ServiceGroup lastServiceGroup = serviceGroupsMap.get(serviceName);
           
-          Optional<ServiceGroup> serviceGroupOpt = consulClient.discoverService(serviceRequest);
-          
-          serviceGroupOpt.ifPresent(sGroup -> {            
-            if (lastServiceGroup == null || !lastServiceGroup.equals(sGroup)) {
-              serviceGroupsMap.put(serviceName, sGroup);
-              subscriber.onNext(sGroup.getServices());
-            }
-          });
-        } catch (Throwable t) {
-          subscriber.onError(t);
-        }
+          if (lastServiceGroup == null || !lastServiceGroup.equals(sGroup)) {
+            serviceGroupsMap.put(serviceName, sGroup);
+            subscriber.onNext(sGroup.getServices());
+            subscriber.onCompleted();
+          }
+        });
+      } catch (Throwable t) {
+        subscriber.onError(t);
       }
     });
     
     return observable.retryWhen(attempts -> {
-      return attempts.zipWith(Observable.range(1, retry + 1), (notification, i) -> {
+          return attempts.zipWith(Observable.range(1, retry), (throwable, i) -> {
             Logger.warn("Failed to listen for \"{}\" service updates. reason: {}",
-                serviceName, notification.getThrowable().toString());
+                serviceName, throwable.toString());
             return i;
           })
           .map(delayFunc)
           .flatMap(delay -> {
-            Logger.warn("Delay next call to discover \"{}\" service by {} second(s)", serviceName, delay);
-            return Observable.timer(delay.intValue(), TimeUnit.SECONDS);
+            Logger.warn("Delay next call to discover \"{}\" service by {} millisecond(s)", serviceName, delay);
+            return Observable.timer(delay.intValue(), delayTimeUnit);
           });
-    });
+    }).repeatWhen(completed -> completed.delay(10, TimeUnit.MILLISECONDS));
   }
 
   private Optional<String> getServiceIndex(String name) {

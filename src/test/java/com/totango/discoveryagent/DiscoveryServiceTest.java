@@ -20,6 +20,7 @@ import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
@@ -52,7 +54,7 @@ public class DiscoveryServiceTest {
     ConsulClient consulClient = mock(ConsulClient.class);
     when(consulClient.discoverService(any())).thenReturn(Optional.empty());
     
-    DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i);
+    DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i, TimeUnit.MILLISECONDS);
     List<Service> services = discoveryService.getServices("unknown-service");
     assertEquals(0, services.size()); 
   }
@@ -66,7 +68,7 @@ public class DiscoveryServiceTest {
     ConsulClient consulClient = mock(ConsulClient.class);
     when(consulClient.discoverService(any())).thenReturn(Optional.of(serviceGroup));
     
-    DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i);
+    DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i, TimeUnit.MILLISECONDS);
     List<Service> services = discoveryService.getServices("pong");
     assertEquals(expected, services);
   }
@@ -86,7 +88,7 @@ public class DiscoveryServiceTest {
     
     final List<Service> services = new ArrayList<>();
     
-    DiscoveryService discoveryService = new DiscoveryService(consulClient, 1, i -> i);
+    DiscoveryService discoveryService = new DiscoveryService(consulClient, 1, i -> i, TimeUnit.MILLISECONDS);
     
     Subscription subscribe = discoveryService.subscribe("pong", update -> {
       synchronized (services) {
@@ -117,25 +119,36 @@ public class DiscoveryServiceTest {
   }
   
   @SuppressWarnings("unchecked")
-  @Test
+  @Test(timeout = 1000)
   public void subscribeWithErrorShouldTriggerRetry() throws Exception {
+    
+    List<Service> singleService = Arrays.asList(SERVICE1);
+    ServiceGroup singleServiceGroup = new ServiceGroup(singleService, Optional.empty());
     
     ConsulClient consulClient = mock(ConsulClient.class);
     when(consulClient.discoverService(any()))
       .thenThrow(UnknownHostException.class)
-      .thenThrow(IOException.class);
+      .thenThrow(UnknownHostException.class)
+      .thenThrow(UnknownHostException.class)
+      .thenReturn(Optional.of(singleServiceGroup))
+      .thenThrow(IOException.class)
+      .thenThrow(IOException.class)
+      .thenReturn(Optional.of(singleServiceGroup));
+      
+    int[] expectedRetry = {1, 2, 3, 1 ,2};
     
     AtomicInteger callsCounter = new AtomicInteger(0);
-    DiscoveryService discoveryService = new DiscoveryService(consulClient, 2, i -> {
+    DiscoveryService discoveryService = new DiscoveryService(consulClient, 3, i -> {
       callsCounter.incrementAndGet();
+      assertTrue("expected " + expectedRetry[i-1] + " got " + i, i == expectedRetry[i-1]);
       return i;
-    });
+    }, TimeUnit.MILLISECONDS);
     
     Subscription subscribe = discoveryService.subscribe("pong", update -> {});
 
-    await().pollInterval(new Duration(1, MILLISECONDS))
-      .atMost(1000, MILLISECONDS)
-      .untilAtomic(callsCounter, equalTo(3));
+    await().pollInterval(new Duration(2, MILLISECONDS))
+      .atMost(300, MILLISECONDS)
+      .untilAtomic(callsCounter, equalTo(5));
     
     subscribe.unsubscribe();
   }
