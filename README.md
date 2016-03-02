@@ -20,7 +20,7 @@ gradle
 ```
 
 ## ConsulClient
-ConsulClient is a HTTP client for [Consul](http://www.consul.io) HTTP interface. You can choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand how this library is built.  
+ConsulClient is a HTTP client for [Consul](http://www.consul.io). You can either choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand which class to use when.  
 
 By default ConsulClient connects to Consul agent on localhost and port 8500.
 
@@ -86,7 +86,7 @@ You can get a healthy service with name and tag.
 		
 ```
 
-You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as describes in the Consul api which is 5 min (https://www.consul.io/docs/agent/http.html).
+You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as described in the [Consul api](https://www.consul.io/docs/agent/http.html) which is 5 min.
 
 ```java
 
@@ -99,7 +99,7 @@ You can also listen for service updates using the index of the last results. The
 		
 ```
 
-ConsulClient can also calls the Consul key-value api.
+ConsulClient can also call the Consul key-value api.
  
  ```java
 
@@ -107,7 +107,7 @@ ConsulClient can also calls the Consul key-value api.
 	
 ```
 
-To listen for a key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as describes in the Consul api which is 5 min (https://www.consul.io/docs/agent/http.html).
+To listen for key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as described in the [Consul api](https://www.consul.io/docs/agent/http.html) which is 5 min.
 
  ```java
 
@@ -116,9 +116,9 @@ To listen for a key-value updates you need to provide the index of the last resu
 ```
 
 ## DiscoveryService
-Listen for updates is very useful but require some work. This is why we have the DiscoveryService class.
+Listen for updates is very useful but requires some work. This is why we have the DiscoveryService class.
 DiscoveryService is a class that helps you register for service updates.
-When you create DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fails and function which will provide the delay in milliseconds between the retries
+When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.
 
 Here is an example of a DiscoveryService with 10 retries. The retry function is a 1 - 10 series.
  
@@ -128,7 +128,7 @@ Here is an example of a DiscoveryService with 10 retries. The retry function is 
 
 ```
 
-The retry in this example is the number of retry in the power of 3.
+The retry in this example is the number of retry to the power of 3.
 
 ```java
 
@@ -136,7 +136,7 @@ The retry in this example is the number of retry in the power of 3.
 
 ```
 
-To subscribe for updates you need provide the service name and an Action to be perform when there is an update.
+To subscribe for updates you need to provide the service name and an Action to be performed when there is an update.
 
 ```java
 
@@ -146,7 +146,7 @@ To subscribe for updates you need provide the service name and an Action to be p
 
 ```
 
-If you want to take an Action on errors you can provide additional Action.
+If you want to take an action on errors you can provide an additional Action.
 
 ```java
 
@@ -164,7 +164,7 @@ DiscoveryService works with RxJava so you can subscribe to update using Subscrib
 ## RoundRobinLoadBalancer
 One of the things you can do when you have multiple instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
 For this functionality we have The RoundRobinLoadBalancer.
-The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list so when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.
+The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list. So when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.
  
 ```java
 
