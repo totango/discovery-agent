@@ -16,6 +16,8 @@
  */
 package com.totango.discoveryagent;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 
 import com.google.gson.Gson;
@@ -27,26 +29,55 @@ import com.totango.discoveryagent.model.Value;
 
 public class ConsulClientFactory {
 
-  private Gson gson;
-  private OkHttpClient okHttpClient;
-
-  public ConsulClientFactory() {
-    initGson();
-    this.okHttpClient = new OkHttpClient();
-  }
+  private static final int MAX_WAIT_TIME_IN_SEC =  600;
   
-  private void initGson() {
+  private static final int DEFAULT_WAIT_TIME_IN_SEC =  300;
+  
+  private static final int READ_TIMEOUT_DELTA =  10;
+  
+  private static final String DEFAULT_HOST =  "localhost";
+  
+  private static final int DEFAULT_PORT =  8500;
+  
+  private String host = DEFAULT_HOST;
+  
+  private int port = DEFAULT_PORT;
+  
+  private int waitTimeInSec = DEFAULT_WAIT_TIME_IN_SEC;
+  
+  private Gson createGson() {
     GsonBuilder gsonBuilder = new GsonBuilder();
     gsonBuilder.registerTypeAdapter(Service.class, new ServiceDeserializer());
     gsonBuilder.registerTypeAdapter(Value.class, new ValueDeserializer());
-    this.gson = gsonBuilder.create();
+    return gsonBuilder.create();
   }
   
   public ConsulClient client() {
-    return new ConsulClient(okHttpClient, gson, "localhost", 8500);
+    if (waitTimeInSec > MAX_WAIT_TIME_IN_SEC || waitTimeInSec < 1) {
+      throw new IllegalArgumentException("Wait timeout should be between 1 to 600 (1s to 10m)");
+    }
+    
+    Gson gson = createGson();
+    OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    builder.readTimeout(waitTimeInSec + READ_TIMEOUT_DELTA, TimeUnit.SECONDS);
+    builder.connectTimeout(waitTimeInSec + READ_TIMEOUT_DELTA, TimeUnit.SECONDS);
+    OkHttpClient okHttpClient = builder.build();
+    
+    return new ConsulClient(okHttpClient, gson, host, port, waitTimeInSec);
   }
   
-  public ConsulClient client(String host, int port) {
-    return new ConsulClient(okHttpClient, gson, host, port);
+  public ConsulClientFactory host(String host) {
+    this.host = host;
+    return this;
+  }
+  
+  public ConsulClientFactory port(int port) {
+    this.port = port;
+    return this;
+  }
+  
+  public ConsulClientFactory waitTimeInSec(int waitTimeInSec) {
+    this.waitTimeInSec = waitTimeInSec;
+    return this;
   }
 }

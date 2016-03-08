@@ -33,13 +33,13 @@ import com.totango.discoveryagent.model.Value;
 
 public class ConsulClient {
   
-  private static final String SERVICE_HEALTH_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&passing";
+  private static final String SERVICE_HEALTH_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&wait=%ds&passing";
   
-  private static final String SERVICE_HEALTH_WITH_TAG_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&tag=%s&passing";
+  private static final String SERVICE_HEALTH_WITH_TAG_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&tag=%s&wait=%ds&passing";
   
   private static final String KEY_VALUE_URL_ENDPOINT = "http://%s:%d/v1/kv/%s?passing";
   
-  private static final String KEY_VALUE_WAIT_URL_ENDPOINT = "http://%s:%d/v1/kv/%s?index=%s&passing";
+  private static final String KEY_VALUE_WAIT_URL_ENDPOINT = "http://%s:%d/v1/kv/%s?index=%s&wait=%ds&passing";
   
   private static final String INDEX_HEADER_NAME = "X-Consul-Index";
   
@@ -55,11 +55,14 @@ public class ConsulClient {
   
   private final int port;
 
-  public ConsulClient(OkHttpClient okClient, Gson gson, String host, int port) {
+  private int waitTimeInSec;
+
+  public ConsulClient(OkHttpClient okClient, Gson gson, String host, int port, int waitTimeInSec) {
     this.okClient = okClient;
     this.gson = gson;
     this.host = host;
     this.port = port;    
+    this.waitTimeInSec = waitTimeInSec;
   }
   
   public Optional<ServiceGroup> discoverService(ServiceRequest request) throws IOException {
@@ -69,11 +72,11 @@ public class ConsulClient {
   
   private String buildDiscoverServiceUrl(ServiceRequest request) {
     if (request.tag() == null) {
-      return String.format(SERVICE_HEALTH_URL_ENDPOINT, host, port, request.serviceName(), request.index());
+      return String.format(SERVICE_HEALTH_URL_ENDPOINT, host, port, request.serviceName(), request.index(), waitTimeInSec);
     }
     
     return String.format(SERVICE_HEALTH_WITH_TAG_URL_ENDPOINT, host, port,
-        request.serviceName(), request.index(), request.tag());
+        request.serviceName(), request.index(), request.tag(), waitTimeInSec);
   }
 
   private Optional<ServiceGroup> getServiceGroup(String url) throws IOException {
@@ -105,7 +108,7 @@ public class ConsulClient {
   }
   
   public Optional<Value> keyValue(String key, String index) throws IOException {
-    String url = String.format(KEY_VALUE_WAIT_URL_ENDPOINT, host, port, key, index);
+    String url = String.format(KEY_VALUE_WAIT_URL_ENDPOINT, host, port, key, index, waitTimeInSec);
     return value(url);
   }
   
