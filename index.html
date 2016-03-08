@@ -42,13 +42,13 @@
   &lt;<span class="pl-ent">dependency</span>&gt;
     &lt;<span class="pl-ent">groupId</span>&gt;com.totango&lt;/<span class="pl-ent">groupId</span>&gt;
     &lt;<span class="pl-ent">artifactId</span>&gt;discovery-agent&lt;/<span class="pl-ent">artifactId</span>&gt;
-    &lt;<span class="pl-ent">version</span>&gt;0.1.0&lt;/<span class="pl-ent">version</span>&gt;
+    &lt;<span class="pl-ent">version</span>&gt;0.2.0&lt;/<span class="pl-ent">version</span>&gt;
   &lt;/<span class="pl-ent">dependency</span>&gt;
 </pre></div>
 
 <p>gradle</p>
 
-<pre><code>'com.totango:discovery-agent:0.1.0'
+<pre><code>'com.totango:discovery-agent:0.2.0'
 
 </code></pre>
 
@@ -57,81 +57,85 @@
 
 <p>ConsulClient is a HTTP client for <a href="http://www.consul.io">Consul</a>. You can either choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand which class to use when.  </p>
 
-<p>By default ConsulClient connects to Consul agent on localhost and port 8500.</p>
+<p>By default ConsulClient connects to Consul agent on localhost, port 8500 and uses 5min for update blocking calls.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">ConsulClientFactory</span> consulClientFactory <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">ConsulClientFactory</span>();
-    <span class="pl-smi">ConsulClient</span> consulClient <span class="pl-k">=</span> consulClientFactory<span class="pl-k">.</span>client();
+<span class="pl-smi">ConsulClientFactory</span> consulClientFactory <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">ConsulClientFactory</span>();
+<span class="pl-smi">ConsulClient</span> consulClient <span class="pl-k">=</span> consulClientFactory<span class="pl-k">.</span>client();
 </pre></div>
 
-<p>You can also provide a different host and port.</p>
+<p>You can also provide a different host, port or wait timeout for consul blocking calls.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">ConsulClientFactory</span> consulClientFactory <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">ConsulClientFactory</span>();
-    <span class="pl-smi">ConsulClient</span> consulClient <span class="pl-k">=</span> consulClientFactory<span class="pl-k">.</span>client(host, port);
+<span class="pl-smi">ConsulClientFactory</span> consulClientFactory <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">ConsulClientFactory</span>();
+<span class="pl-smi">ConsulClient</span> consulClient <span class="pl-k">=</span> consulClientFactory
+  .host(server<span class="pl-k">.</span>getHostName())
+  .port(server<span class="pl-k">.</span>getPort())
+  .waitTimeInSec(waitTimeInSec)
+  .client();
 </pre></div>
 
 <p>Get a list of healthy services</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
-            .forService(serviceName)
-            .build();
+<span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
+  .forService(serviceName)
+  .build();
 
-    <span class="pl-k">Optional&lt;<span class="pl-smi">ServiceGroup</span>&gt;</span> response <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>discoverService(serviceRequest);
+<span class="pl-k">Optional&lt;<span class="pl-smi">ServiceGroup</span>&gt;</span> response <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>discoverService(serviceRequest);
 </pre></div>
 
-<p>You can then use the response to make calls to the service.</p>
+<p>You can then use the response to make calls to the service. In this example we use OkHttp to make an HTTP call to the service.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-k">if</span> (response<span class="pl-k">.</span>isPresent() <span class="pl-k">&amp;&amp;</span> response<span class="pl-k">.</span>get()<span class="pl-k">.</span>size() <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>) {
+<span class="pl-k">if</span> (response<span class="pl-k">.</span>isPresent() <span class="pl-k">&amp;&amp;</span> response<span class="pl-k">.</span>get()<span class="pl-k">.</span>size() <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>) {
 
-        <span class="pl-k">List&lt;<span class="pl-smi">Service</span>&gt;</span> services <span class="pl-k">=</span> response<span class="pl-k">.</span>get()<span class="pl-k">.</span>getServices();
+    <span class="pl-k">List&lt;<span class="pl-smi">Service</span>&gt;</span> services <span class="pl-k">=</span> response<span class="pl-k">.</span>get()<span class="pl-k">.</span>getServices();
 
-        <span class="pl-c">// choose one from the list</span>
-        <span class="pl-smi">Service</span> service <span class="pl-k">=</span> services<span class="pl-k">.</span>get(<span class="pl-c1">0</span>);
+    <span class="pl-c">// choose one from the list</span>
+    <span class="pl-smi">Service</span> service <span class="pl-k">=</span> services<span class="pl-k">.</span>get(<span class="pl-c1">0</span>);
 
-        <span class="pl-smi">String</span> url <span class="pl-k">=</span> <span class="pl-smi">String</span><span class="pl-k">.</span>format(<span class="pl-s"><span class="pl-pds">"</span>http://%s:%d<span class="pl-pds">"</span></span>, service<span class="pl-k">.</span>getAddress(), service<span class="pl-k">.</span>getServicePort());
-        <span class="pl-smi">Request</span> request <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Request</span>.<span class="pl-smi">Builder</span>()<span class="pl-k">.</span>url(url)<span class="pl-k">.</span>build();
-        <span class="pl-smi">Response</span> response <span class="pl-k">=</span> httpClient<span class="pl-k">.</span>newCall(request)<span class="pl-k">.</span>execute();
-        <span class="pl-c1">...</span>
-    } <span class="pl-k">else</span> {
-        logger<span class="pl-k">.</span>log(<span class="pl-s"><span class="pl-pds">"</span>Failed to discover a healthy <span class="pl-pds">"</span></span> <span class="pl-k">+</span> serviceName);
-    }
+    <span class="pl-smi">String</span> url <span class="pl-k">=</span> <span class="pl-smi">String</span><span class="pl-k">.</span>format(<span class="pl-s"><span class="pl-pds">"</span>http://%s:%d<span class="pl-pds">"</span></span>, service<span class="pl-k">.</span>getAddress(), service<span class="pl-k">.</span>getServicePort());
+    <span class="pl-smi">Request</span> request <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Request</span>.<span class="pl-smi">Builder</span>()<span class="pl-k">.</span>url(url)<span class="pl-k">.</span>build();
+    <span class="pl-smi">Response</span> response <span class="pl-k">=</span> httpClient<span class="pl-k">.</span>newCall(request)<span class="pl-k">.</span>execute();
+    <span class="pl-c1">...</span>
+} <span class="pl-k">else</span> {
+    logger<span class="pl-k">.</span>log(<span class="pl-s"><span class="pl-pds">"</span>Failed to discover a healthy <span class="pl-pds">"</span></span> <span class="pl-k">+</span> serviceName);
+}
 </pre></div>
 
 <p>You can get a healthy service with name and tag.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">String</span> tag <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>master<span class="pl-pds">"</span></span>;
+<span class="pl-smi">String</span> tag <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>master<span class="pl-pds">"</span></span>;
 
-    <span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
-        .forService(serviceName)
-        .withTag(tag)
-        .build();
+<span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
+    .forService(serviceName)
+    .withTag(tag)
+    .build();
 </pre></div>
 
-<p>You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as described in the <a href="https://www.consul.io/docs/agent/http.html">Consul api</a> which is 5 min.</p>
+<p>You can also listen for Consul service updates using the index of the last results. The call block until there is an update or the provided waitTimeoutInMs that was passed to the ConsulClientFactory was passed.  </p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">String</span> tag <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>master<span class="pl-pds">"</span></span>;
+<span class="pl-smi">String</span> tag <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>master<span class="pl-pds">"</span></span>;
 
-    <span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
-        .forService(serviceName)
-        .lastUpdateIndex(index)
-        .build();
+<span class="pl-smi">ServiceRequest</span> serviceRequest <span class="pl-k">=</span> <span class="pl-smi">Service</span><span class="pl-k">.</span>request()
+    .forService(serviceName)
+    .lastUpdateIndex(index)
+    .build();
 </pre></div>
 
 <p>ConsulClient can also call the Consul key-value api.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key);
+<span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key);
 </pre></div>
 
-<p>To listen for key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as described in the <a href="https://www.consul.io/docs/agent/http.html">Consul api</a> which is 5 min.</p>
+<p>To listen for key-value updates you need to provide the index of the last results. The call block until there is an update or the provided waitTimeoutInMs that was passed to the ConsulClientFactory was passed.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key, index);
+<span class="pl-k">Optional&lt;<span class="pl-smi">Value</span>&gt;</span> result <span class="pl-k">=</span> consulClient<span class="pl-k">.</span>keyValue(key, index);
 </pre></div>
 
 <h2>
@@ -139,64 +143,70 @@
 
 <p>Listen for updates is very useful but requires some work. This is why we have the DiscoveryService class.
 DiscoveryService is a class that helps you register for service updates.
-When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.</p>
+When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.  </p>
 
 <p>Here is an example of a DiscoveryService with 10 retries. The retry function is a 1 - 10 series.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-c1">10</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> i);
+<span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-c1">10</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> i);
 </pre></div>
 
-<p>The retry in this example is the number of retry to the power of 3.</p>
+<p>The retry in this example is the number of retry to the power of 3. In case of failure </p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-c1">10</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> (<span class="pl-k">int</span>)<span class="pl-smi">Math</span><span class="pl-k">.</span>pow(i, <span class="pl-c1">3</span>));
+<span class="pl-smi">DiscoveryService</span> discoveryService <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DiscoveryService</span>(consulClient, <span class="pl-smi">Integer</span><span class="pl-c1"><span class="pl-k">.</span>MAX_VALUE</span>, i <span class="pl-k">-</span><span class="pl-k">&gt;</span> (<span class="pl-k">int</span>)<span class="pl-smi">Math</span><span class="pl-k">.</span>pow(i, <span class="pl-c1">3</span>), <span class="pl-smi">TimeUnit</span><span class="pl-c1"><span class="pl-k">.</span>MILLISECONDS</span>);
 </pre></div>
 
-<p>To subscribe for updates you need to provide the service name and an Action to be performed when there is an update.</p>
+<p>To subscribe for updates from Consul you need to provide the service name and an Action to be performed when there is an update.
+The DiscoveryService will continue to listen for updates as long as there is subscription for updates.<br>
+In case of an error getting an update from Consul, DiscoveryService will retry the call up to the given retry with a wait time that is calculated using the delay function. This is very handy in order to provide exponential back off in case of failures. If the max retry is reached or the call succeed, as long as there is subscription, it will continue listen for updates. In both cases the retry counter will be reset.  </p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
-      <span class="pl-c">// do something with the returned List&lt;Service&gt;</span>
-    });
+<span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
+  <span class="pl-c">// do something with the returned List&lt;Service&gt;</span>
+});
 </pre></div>
 
 <p>If you want to take an action on errors you can provide an additional Action.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
-      <span class="pl-c">// do something with the List&lt;Service&gt;</span>
-        },
-        throwable <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
-            <span class="pl-c">// do something with the Throwable</span>
-        });
+<span class="pl-smi">Subscription</span> subscribe <span class="pl-k">=</span> discoveryService<span class="pl-k">.</span>subscribe(<span class="pl-s"><span class="pl-pds">"</span>web-server<span class="pl-pds">"</span></span>, services <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
+     <span class="pl-c">// do something with the List&lt;Service&gt;</span>
+    },
+    throwable <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
+        <span class="pl-c">// do something with the Throwable</span>
+    });
 </pre></div>
+
+<p>To unsubscribe from updates just call</p>
+
+<div class="highlight highlight-source-java"><pre>subscribe<span class="pl-k">.</span>unsubscribe();</pre></div>
 
 <p>DiscoveryService works with RxJava so you can subscribe to update using Subscriber, Observer and Action. </p>
 
 <h2>
 <a id="roundrobinloadbalancer" class="anchor" href="#roundrobinloadbalancer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>RoundRobinLoadBalancer</h2>
 
-<p>One of the things you can do when you have multiple instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
+<p>One of the things you can do when Consul return a list of instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
 For this functionality we have The RoundRobinLoadBalancer.
 The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list. So when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    <span class="pl-smi">RoundRobinLoadBalancer</span> balancer <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">RoundRobinLoadBalancer</span>(discoveryService, serviceName);
-    balancer<span class="pl-k">.</span>init();
+<span class="pl-smi">RoundRobinLoadBalancer</span> balancer <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">RoundRobinLoadBalancer</span>(discoveryService, serviceName);
+balancer<span class="pl-k">.</span>init();
 </pre></div>
 
 <p>To use the LoadBalancer you need to call the withNextEndpoint() method with a function that gets host and port. withNextEndpoint() is a generic method that can return any kind of Object you need to return in your case.</p>
 
 <div class="highlight highlight-source-java"><pre>
-    balancer<span class="pl-k">.</span>withNextEndpoint((host, port) <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
-        <span class="pl-smi">String</span> url <span class="pl-k">=</span> <span class="pl-smi">String</span><span class="pl-k">.</span>format(<span class="pl-s"><span class="pl-pds">"</span>http://%s:%d<span class="pl-pds">"</span></span>, host, port);
-        <span class="pl-smi">Request</span> request <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Request</span>.<span class="pl-smi">Builder</span>()<span class="pl-k">.</span>url(url)<span class="pl-k">.</span>build();
-        <span class="pl-smi">Response</span> response <span class="pl-k">=</span> httpClient<span class="pl-k">.</span>newCall(request)<span class="pl-k">.</span>execute();
-        <span class="pl-c1">...</span>
+balancer<span class="pl-k">.</span>withNextEndpoint((host, port) <span class="pl-k">-</span><span class="pl-k">&gt;</span> {
+    <span class="pl-smi">String</span> url <span class="pl-k">=</span> <span class="pl-smi">String</span><span class="pl-k">.</span>format(<span class="pl-s"><span class="pl-pds">"</span>http://%s:%d<span class="pl-pds">"</span></span>, host, port);
+    <span class="pl-smi">Request</span> request <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Request</span>.<span class="pl-smi">Builder</span>()<span class="pl-k">.</span>url(url)<span class="pl-k">.</span>build();
+    <span class="pl-smi">Response</span> response <span class="pl-k">=</span> httpClient<span class="pl-k">.</span>newCall(request)<span class="pl-k">.</span>execute();
+    <span class="pl-c1">...</span>
 
-        <span class="pl-k">return</span> result;
-    });
+    <span class="pl-k">return</span> result;
+});
 </pre></div>
 
 <h2>
