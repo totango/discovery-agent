@@ -23,14 +23,17 @@ import static org.junit.Assert.assertEquals;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import org.junit.Test;
-
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+
+import org.junit.Test;
+
+import com.google.common.base.Splitter;
 import com.totango.discoveryagent.model.Service;
 import com.totango.discoveryagent.model.ServiceGroup;
 import com.totango.discoveryagent.model.Value;
@@ -53,9 +56,21 @@ public class ConsulClientTest {
 
   private final ServiceRequest serviceRequest = request().forService("whatever").build();
 
+  @Test(expected=IllegalArgumentException.class)
+  public void waitTimeoutShouldBeGreaterThan0() {
+    ConsulClientFactory consulClientFactory = new ConsulClientFactory();
+    consulClientFactory.waitTimeInSec(0).client();
+  }
+  
+  @Test(expected=IllegalArgumentException.class)
+  public void waitTimeoutShouldBeLessThan601() {
+    ConsulClientFactory consulClientFactory = new ConsulClientFactory();
+    consulClientFactory.waitTimeInSec(601).client();
+  }
+  
   @Test
   public void discoverServiceWithoutIndexShouldUseIndexZero() throws Exception {
-    withMockedResponse(new MockResponse().setResponseCode(500),
+    withMockedResponse(new MockResponse().setResponseCode(200),
         (ConsulClient consulClient, MockWebServer server) -> {
 
       consulClient.discoverService(serviceRequest);
@@ -64,33 +79,57 @@ public class ConsulClientTest {
       String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
       assertEquals("Service name doesn't match", serviceName, serviceRequest.serviceName());
 
-      String index = path.substring(path.lastIndexOf("=") + 1, path.indexOf('&'));
-      assertEquals("Index doesn't match", "0", index);
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Index doesn't match", "0", keyValueMap.get("index"));
     });
   }
 
   @Test
   public void discoverServiceWithIndexShouldUseTheProvidedIndex() throws Exception {
-    withMockedResponse(new MockResponse().setResponseCode(500),
+    withMockedResponse(new MockResponse().setResponseCode(200),
         (ConsulClient consulClient, MockWebServer server) -> {
 
-      ServiceRequest requestWithIndex = request().forService("whatever").lastUpdateIndex("1")
+      ServiceRequest requestWithIndex = request().forService("whatever").lastUpdateIndex("10")
           .build();
 
+      @SuppressWarnings("unused")
       Optional<ServiceGroup> discoverService = consulClient.discoverService(requestWithIndex);
 
       String path = server.takeRequest().getPath();
       String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
       assertEquals("Service name doesn't match", serviceName, serviceRequest.serviceName());
 
-      String index = path.substring(path.lastIndexOf("=") + 1, path.indexOf('&'));
-      assertEquals("Index doesn't match", "1", index);
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Index doesn't match", "10", keyValueMap.get("index"));
+      assertEquals("Index doesn't match", "1s", keyValueMap.get("wait"));
+    });
+  }
+  
+  @Test
+  public void discoverServiceWithIndexAndWaitShouldUseTheProvidedIndexAndTheWait() throws Exception {
+    withMockedResponse(new MockResponse().setResponseCode(200), 300,
+        (ConsulClient consulClient, MockWebServer server) -> {
+
+      ServiceRequest requestWithIndex = request().forService("whatever").lastUpdateIndex("1")
+          .build();
+
+      @SuppressWarnings("unused")
+      Optional<ServiceGroup> discoverService = consulClient.discoverService(requestWithIndex);
+
+      String path = server.takeRequest().getPath();
+      String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
+      assertEquals("Service name doesn't match", serviceName, serviceRequest.serviceName());
+
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      
+      assertEquals("Index doesn't match", "1", keyValueMap.get("index"));
+      assertEquals("Index doesn't match", "300s", keyValueMap.get("wait"));
     });
   }
 
   @Test
-  public void discoverServiceWithTagShouldUseTheProvidedIndex() throws Exception {
-    withMockedResponse(new MockResponse().setResponseCode(500),
+  public void discoverServiceWithTagShouldUseTheProvidedTag() throws Exception {
+    withMockedResponse(new MockResponse().setResponseCode(200),
         (ConsulClient consulClient, MockWebServer server) -> {
 
       ServiceRequest requestWithIndex = request().forService("whatever").withTag("master").build();
@@ -101,8 +140,28 @@ public class ConsulClientTest {
       String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
       assertEquals("Service name doesn't match", serviceName, serviceRequest.serviceName());
 
-      String tag = path.substring(path.lastIndexOf("=") + 1, path.lastIndexOf('&'));
-      assertEquals("Tag doesn't match", "master", tag);
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Tag doesn't match", "master", keyValueMap.get("tag"));
+      assertEquals("Index doesn't match", "1s", keyValueMap.get("wait"));
+    });
+  }
+  
+  @Test
+  public void discoverServiceWithTagAndWaitShouldUseTheProvidedTagAndWait() throws Exception {
+    withMockedResponse(new MockResponse().setResponseCode(200), 300,
+        (ConsulClient consulClient, MockWebServer server) -> {
+
+      ServiceRequest requestWithIndex = request().forService("whatever").withTag("master").build();
+
+      consulClient.discoverService(requestWithIndex);
+
+      String path = server.takeRequest().getPath();
+      String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
+      assertEquals("Service name doesn't match", serviceName, serviceRequest.serviceName());
+
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Tag doesn't match", "master", keyValueMap.get("tag"));
+      assertEquals("Index doesn't match", "300s", keyValueMap.get("wait"));
     });
   }
 
@@ -156,20 +215,57 @@ public class ConsulClientTest {
       assertEquals(ZIP_VALUE, value.get());
     });
   }
+  
+  @Test
+  public void keyValueWithIndexShouldUseTheIndex() throws Exception {
+    withMockedResponse(new MockResponse().setBody("[]"), (ConsulClient consulClient,
+        MockWebServer server) -> {
 
-  private void withMockedResponse(MockResponse res,
+      consulClient.keyValue("key1", "10");
+      String path = server.takeRequest().getPath();
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Tag doesn't match", "10", keyValueMap.get("index"));
+      assertEquals("Index doesn't match", "1s", keyValueMap.get("wait"));
+    });
+  }
+  
+  @Test
+  public void keyValueWithIndexAndWaitShouldUseTheIndexAndWait() throws Exception {
+    withMockedResponse(new MockResponse().setBody("[]"), 300, (ConsulClient consulClient,
+        MockWebServer server) -> {
+
+      consulClient.keyValue("key1", "10");
+      String path = server.takeRequest().getPath();
+      final Map<String, String> keyValueMap = pathKeyValue(path);
+      assertEquals("Tag doesn't match", "10", keyValueMap.get("index"));
+      assertEquals("Index doesn't match", "300s", keyValueMap.get("wait"));
+    });
+  }
+
+  private void withMockedResponse(MockResponse res, int waitTimeInSec,
       ThrowableBiConsumer<ConsulClient, MockWebServer> func) throws Exception {
+    
     MockWebServer server = new MockWebServer();
     server.enqueue(res);
     server.start();
 
-    func.accept(consulClient(server), server);
+    func.accept(consulClient(server, waitTimeInSec), server);
     server.shutdown();
   }
+  
+  private void withMockedResponse(MockResponse res,
+      ThrowableBiConsumer<ConsulClient, MockWebServer> func) throws Exception {
+    
+    withMockedResponse(res, 1, func);
+  }
 
-  private ConsulClient consulClient(MockWebServer server) {
+  private ConsulClient consulClient(MockWebServer server, int waitTimeInSec) {
     ConsulClientFactory consulClientFactory = new ConsulClientFactory();
-    return consulClientFactory.client(server.getHostName(), server.getPort());
+    return consulClientFactory
+        .host(server.getHostName())
+        .port(server.getPort())
+        .waitTimeInSec(waitTimeInSec)
+        .client();
   }
 
   @FunctionalInterface
@@ -189,6 +285,12 @@ public class ConsulClientTest {
         after.accept(l, r);
       };
     }
+  }
+  
+  private Map<String, String> pathKeyValue(String path) {
+    String query = path.substring(0, path.indexOf("&passing")).split("\\?")[1];
+    final Map<String, String> keyValueMap = Splitter.on('&').withKeyValueSeparator("=").split(query);
+    return keyValueMap;
   }
 
 }
