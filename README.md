@@ -9,13 +9,13 @@ maven
   <dependency>
     <groupId>com.totango</groupId>
     <artifactId>discovery-agent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
   </dependency>
 
 ```
 gradle
 ```
-'com.totango:discovery-agent:0.1.0'
+'com.totango:discovery-agent:0.2.0'
 
 ```
 
@@ -26,17 +26,21 @@ By default ConsulClient connects to Consul agent on localhost and port 8500.
 
 ```java
 
-	ConsulClientFactory consulClientFactory = new ConsulClientFactory();
-	ConsulClient consulClient = consulClientFactory.client();
+ConsulClientFactory consulClientFactory = new ConsulClientFactory();
+ConsulClient consulClient = consulClientFactory.client();
 
 ```
 
-You can also provide a different host and port.
+You can also provide a different host and port and wait timeout for consul blocking calls.
 
 ```java
 
-	ConsulClientFactory consulClientFactory = new ConsulClientFactory();
-	ConsulClient consulClient = consulClientFactory.client(host, port);
+ConsulClientFactory consulClientFactory = new ConsulClientFactory();
+ConsulClient consulClient = consulClientFactory
+  .host(server.getHostName())
+  .port(server.getPort())
+  .waitTimeInSec(waitTimeInSec)
+  .client();
 	
 ```
 
@@ -44,11 +48,11 @@ Get a list of healthy services
 
 ```java
 
-	ServiceRequest serviceRequest = Service.request()
-			.forService(serviceName)
-			.build();
+ServiceRequest serviceRequest = Service.request()
+  .forService(serviceName)
+  .build();
 			
-	Optional<ServiceGroup> response = consulClient.discoverService(serviceRequest);
+Optional<ServiceGroup> response = consulClient.discoverService(serviceRequest);
 	
 ```
 
@@ -56,20 +60,20 @@ You can then use the response to make calls to the service.
 
 ```java
 
-	if (response.isPresent() && response.get().size() > 0) {
+if (response.isPresent() && response.get().size() > 0) {
 	
-		List<Service> services = response.get().getServices();
+	List<Service> services = response.get().getServices();
 		
-		// choose one from the list
-		Service service = services.get(0);
+	// choose one from the list
+	Service service = services.get(0);
 		
-		String url = String.format("http://%s:%d", service.getAddress(), service.getServicePort());
-		Request request = new Request.Builder().url(url).build();
-		Response response = httpClient.newCall(request).execute();
-		...
-	} else {
-		logger.log("Failed to discover a healthy " + serviceName);
-	}
+	String url = String.format("http://%s:%d", service.getAddress(), service.getServicePort());
+	Request request = new Request.Builder().url(url).build();
+	Response response = httpClient.newCall(request).execute();
+	...
+} else {
+	logger.log("Failed to discover a healthy " + serviceName);
+}
 
 ```
 
@@ -77,12 +81,12 @@ You can get a healthy service with name and tag.
 
 ```java
 
-	String tag = "master";
+String tag = "master";
 	
-	ServiceRequest serviceRequest = Service.request()
-		.forService(serviceName)
-		.withTag(tag)
-		.build();
+ServiceRequest serviceRequest = Service.request()
+	.forService(serviceName)
+	.withTag(tag)
+	.build();
 		
 ```
 
@@ -90,12 +94,12 @@ You can also listen for service updates using the index of the last results. The
 
 ```java
 
-	String tag = "master";
+String tag = "master";
 	
-	ServiceRequest serviceRequest = Service.request()
-		.forService(serviceName)
-		.lastUpdateIndex(index)
-		.build();
+ServiceRequest serviceRequest = Service.request()
+	.forService(serviceName)
+	.lastUpdateIndex(index)
+	.build();
 		
 ```
 
@@ -103,7 +107,7 @@ ConsulClient can also call the Consul key-value api.
  
  ```java
 
-	Optional<Value> result = consulClient.keyValue(key);
+Optional<Value> result = consulClient.keyValue(key);
 	
 ```
 
@@ -111,7 +115,7 @@ To listen for key-value updates you need to provide the index of the last result
 
  ```java
 
-	Optional<Value> result = consulClient.keyValue(key, index);
+Optional<Value> result = consulClient.keyValue(key, index);
 	
 ```
 
@@ -124,7 +128,7 @@ Here is an example of a DiscoveryService with 10 retries. The retry function is 
  
 ```java
 
-	DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> i);
+DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> i);
 
 ```
 
@@ -132,7 +136,7 @@ The retry in this example is the number of retry to the power of 3.
 
 ```java
 
-	DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> (int)Math.pow(i, 3));
+DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> (int)Math.pow(i, 3), TimeUnit.MILLISECONDS);
 
 ```
 
@@ -140,9 +144,9 @@ To subscribe for updates you need to provide the service name and an Action to b
 
 ```java
 
-	Subscription subscribe = discoveryService.subscribe("web-server", services -> {
-      // do something with the returned List<Service>
-	});
+Subscription subscribe = discoveryService.subscribe("web-server", services -> {
+  // do something with the returned List<Service>
+});
 
 ```
 
@@ -150,12 +154,12 @@ If you want to take an action on errors you can provide an additional Action.
 
 ```java
 
-	Subscription subscribe = discoveryService.subscribe("web-server", services -> {
-      // do something with the List<Service>
-		},
-		throwable -> {
-			// do something with the Throwable
-		});
+Subscription subscribe = discoveryService.subscribe("web-server", services -> {
+     // do something with the List<Service>
+	},
+	throwable -> {
+		// do something with the Throwable
+	});
   
 ```
 
@@ -168,8 +172,8 @@ The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the m
  
 ```java
 
-	RoundRobinLoadBalancer balancer = new RoundRobinLoadBalancer(discoveryService, serviceName);
-	balancer.init();
+RoundRobinLoadBalancer balancer = new RoundRobinLoadBalancer(discoveryService, serviceName);
+balancer.init();
 
 ```
 
@@ -177,14 +181,14 @@ To use the LoadBalancer you need to call the withNextEndpoint() method with a fu
 
 ```java
 	
-	balancer.withNextEndpoint((host, port) -> {
-		String url = String.format("http://%s:%d", host, port);
-		Request request = new Request.Builder().url(url).build();
-		Response response = httpClient.newCall(request).execute();
-		...
+balancer.withNextEndpoint((host, port) -> {
+	String url = String.format("http://%s:%d", host, port);
+	Request request = new Request.Builder().url(url).build();
+	Response response = httpClient.newCall(request).execute();
+	...
 		
-		return result;
-	});
+	return result;
+});
 
 ```
 
