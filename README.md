@@ -22,7 +22,7 @@ gradle
 ## ConsulClient
 ConsulClient is a HTTP client for [Consul](http://www.consul.io). You can either choose to work directly with ConsulClient or you can use the ServiceDiscovery or RoundRobinLoadBalancer which are targeted to more specific use cases. We suggest you read the whole README to fully understand which class to use when.  
 
-By default ConsulClient connects to Consul agent on localhost and port 8500.
+By default ConsulClient connects to Consul agent on localhost, port 8500 and uses 5min for update blocking calls.
 
 ```java
 
@@ -31,7 +31,7 @@ ConsulClient consulClient = consulClientFactory.client();
 
 ```
 
-You can also provide a different host and port and wait timeout for consul blocking calls.
+You can also provide a different host, port or wait timeout for consul blocking calls.
 
 ```java
 
@@ -56,7 +56,7 @@ Optional<ServiceGroup> response = consulClient.discoverService(serviceRequest);
 	
 ```
 
-You can then use the response to make calls to the service.
+You can then use the response to make calls to the service. In this example we use OkHttp to make an HTTP call to the service.
 
 ```java
 
@@ -90,7 +90,7 @@ ServiceRequest serviceRequest = Service.request()
 		
 ```
 
-You can also listen for service updates using the index of the last results. The call uses the MAX timeout for this call as described in the [Consul api](https://www.consul.io/docs/agent/http.html) which is 5 min.
+You can also listen for Consul service updates using the index of the last results. The call block until there is an update or the provided waitTimeoutInMs that was passed to the ConsulClientFactory was passed.  
 
 ```java
 
@@ -111,7 +111,7 @@ Optional<Value> result = consulClient.keyValue(key);
 	
 ```
 
-To listen for key-value updates you need to provide the index of the last results. The call uses the MAX timeout for this call as described in the [Consul api](https://www.consul.io/docs/agent/http.html) which is 5 min.
+To listen for key-value updates you need to provide the index of the last results. The call block until there is an update or the provided waitTimeoutInMs that was passed to the ConsulClientFactory was passed.
 
  ```java
 
@@ -122,7 +122,7 @@ Optional<Value> result = consulClient.keyValue(key, index);
 ## DiscoveryService
 Listen for updates is very useful but requires some work. This is why we have the DiscoveryService class.
 DiscoveryService is a class that helps you register for service updates.
-When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.
+When you create a DiscoveryService instance you need to provide a ConsulClient, number of retries if the calls to the Consul Agent fail and function which will provide the delay in milliseconds between the retries.  
 
 Here is an example of a DiscoveryService with 10 retries. The retry function is a 1 - 10 series.
  
@@ -132,15 +132,17 @@ DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> 
 
 ```
 
-The retry in this example is the number of retry to the power of 3.
+The retry in this example is the number of retry to the power of 3. In case of failure 
 
 ```java
 
-DiscoveryService discoveryService = new DiscoveryService(consulClient, 10, i -> (int)Math.pow(i, 3), TimeUnit.MILLISECONDS);
+DiscoveryService discoveryService = new DiscoveryService(consulClient, Integer.MAX_VALUE, i -> (int)Math.pow(i, 3), TimeUnit.MILLISECONDS);
 
 ```
 
-To subscribe for updates you need to provide the service name and an Action to be performed when there is an update.
+To subscribe for updates from Consul you need to provide the service name and an Action to be performed when there is an update.
+The DiscoveryService will continue to listen for updates as long as there is subscription for updates.  
+In case of an error getting an update from Consul, DiscoveryService will retry the call up to the given retry with a wait time that is calculated using the delay function. This is very handy in order to provide exponential back off in case of failures. If the max retry is reached or the call succeed, as long as there is subscription, it will continue listen for updates. In both cases the retry counter will be reset.  
 
 ```java
 
@@ -163,10 +165,16 @@ Subscription subscribe = discoveryService.subscribe("web-server", services -> {
   
 ```
 
+To unsubscribe from updates just call
+
+```java
+subscribe.unsubscribe();
+```
+
 DiscoveryService works with RxJava so you can subscribe to update using Subscriber, Observer and Action. 
 
 ## RoundRobinLoadBalancer
-One of the things you can do when you have multiple instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
+One of the things you can do when Consul return a list of instances that provides the same service is to call all of the instances in a round robin and this way to spread the load between them.
 For this functionality we have The RoundRobinLoadBalancer.
 The RoundRobinLoadBalancer uses a DiscoveryService in order to always know the most up to date service list. So when it is asked for the next endpoint it will provide a healthy one. To tell the balancer to start listening for updates you need to call the init() method.
  
