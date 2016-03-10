@@ -63,7 +63,7 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
     if (!service.isPresent()) {
       throw new NoServiceAvailable(String.format("There is no \"%s\" service available", serviceName));
     }
-    return func.apply(service.get().getAddress(), service.get().getServicePort());
+    return func.apply(service.get().getServiceAddress(), service.get().getServicePort());
   }
   
   private Optional<Service> nextService() {

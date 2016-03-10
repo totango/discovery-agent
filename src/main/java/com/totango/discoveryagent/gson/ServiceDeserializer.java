@@ -37,19 +37,20 @@ public class ServiceDeserializer implements JsonDeserializer<Service> {
     
     JsonObject nodeObject = (JsonObject)jsonObj.get("Node");
     String node = nodeObject.get("Node").getAsString();
-    String address = nodeObject.get("Address").getAsString();
+    String nodeAddress = nodeObject.get("Address").getAsString();
     
     JsonObject serviceObject = (JsonObject)jsonObj.get("Service");
-    String id = serviceObject.get("ID").getAsString();
-    String name = serviceObject.get("Service").getAsString();
-    int port = serviceObject.get("Port").getAsInt();
+    String serviceId = serviceObject.get("ID").getAsString();
+    String serviceName = serviceObject.get("Service").getAsString();
+    String serviceAddress = serviceObject.get("Address").getAsString();
+    int servicePort = serviceObject.get("Port").getAsInt();
     
     JsonArray tagsJsonArray = serviceObject.get("Tags").getAsJsonArray();
-    List<String> tags = new ArrayList<String>(tagsJsonArray.size());
+    List<String> serviceTags = new ArrayList<String>(tagsJsonArray.size());
     tagsJsonArray.forEach(element -> {
-      tags.add(element.getAsString());
+      serviceTags.add(element.getAsString());
     });
     
-    return new Service(node, address, id, name, tags, port);
+    return new Service(node, nodeAddress, serviceId, serviceName, serviceTags, serviceAddress, servicePort);
   }
 }

@@ -44,9 +44,11 @@ import com.totango.discoveryagent.model.ServiceGroup;
 
 public class DiscoveryServiceTest {
 
-  private static final Service SERVICE1 = new Service("pong-service-1", "192.168.25.111", "pong", "pong", Arrays.asList("jvm"), 9877);
+  private static final Service SERVICE1 = new Service("pong-service-1", "192.168.25.111", 
+      "pong", "pong", Arrays.asList("jvm"), "192.168.25.111", 9877);
   
-  private static final Service SERVICE2 = new Service("pong-service-2", "192.168.25.112", "pong", "pong", Arrays.asList("jvm"), 9877);
+  private static final Service SERVICE2 = new Service("pong-service-2",
+      "192.168.25.112", "pong", "pong", Arrays.asList("jvm"), "192.168.25.112", 9877);
   
   @Test
   public void getServiceShouldReturnEmptyServiceListForUnknownService() throws Exception {

@@ -41,10 +41,10 @@ import com.totango.discoveryagent.model.Value;
 public class ConsulClientTest {
 
   private static final Service SERVICE1 = new Service("pong-service-1", "192.168.25.111", "pong",
-      "pong", Arrays.asList("jvm"), 9877);
+      "pong", Arrays.asList("jvm"), "192.168.25.111", 9877);
 
   private static final Service SERVICE2 = new Service("pong-service-2", "192.168.25.112", "pong",
-      "pong", Arrays.asList("jvm"), 9877);
+      "pong", Arrays.asList("jvm"), "192.168.25.112", 9877);
 
   private static final String SERVICE_HEALTH_2_NODES_JSON = load("v1_health_service_pong-2-services.json");
 

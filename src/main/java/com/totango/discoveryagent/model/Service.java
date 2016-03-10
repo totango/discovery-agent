@@ -22,19 +22,21 @@ import java.util.Objects;
 public class Service {
 
   private String node;
-  private String address;
+  private String nodeAddress;
+  private String serviceAddress;
   private String serviceId;
   private String serviceName;
   private List<String> serviceTags;
   private int servicePort;
 
-  public Service(String node, String address, String serviceId, String serviceName,
-      List<String> serviceTags, int servicePort) {
+  public Service(String node, String nodeAddress, String serviceId, String serviceName,
+      List<String> serviceTags, String serviceAddress, int servicePort) {
     this.node = node;
-    this.address = address;
+    this.nodeAddress = nodeAddress;
     this.serviceId = serviceId;
     this.serviceName = serviceName;
     this.serviceTags = serviceTags;
+    this.serviceAddress = serviceAddress;
     this.servicePort = servicePort;
   }
 
@@ -42,8 +44,8 @@ public class Service {
     return node;
   }
 
-  public String getAddress() {
-    return address;
+  public String getNodeAddress() {
+    return nodeAddress;
   }
 
   public String getServiceId() {
@@ -58,6 +60,10 @@ public class Service {
     return serviceTags;
   }
 
+  public String getServiceAddress() {
+    return serviceAddress;
+  }
+  
   public int getServicePort() {
     return servicePort;
   }
@@ -73,16 +79,17 @@ public class Service {
     Service that = (Service) o;
 
     return Objects.equals(node, that.node)
-        && Objects.equals(address, that.address)
+        && Objects.equals(nodeAddress, that.nodeAddress)
         && Objects.equals(serviceId, that.serviceId)
         && Objects.equals(serviceName, that.serviceName)
         && Objects.equals(serviceTags, that.serviceTags)
+        && Objects.equals(serviceAddress, that.serviceAddress)
         && Objects.equals(servicePort, that.servicePort);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(node, address, serviceId, serviceName, serviceTags, servicePort);
+    return Objects.hash(node, nodeAddress, serviceId, serviceName, serviceTags, serviceAddress, servicePort);
   }
 
 }

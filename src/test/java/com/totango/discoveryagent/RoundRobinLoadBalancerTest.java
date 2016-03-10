@@ -35,9 +35,11 @@ public class RoundRobinLoadBalancerTest {
 
   private static final String SERVICE_NAME = "pong-service-1";
   
-  private static final Service SERVICE1 = new Service("pong-service-1", "192.168.25.111", "pong", "pong", Arrays.asList("jvm"), 9877);
+  private static final Service SERVICE1 = new Service("pong-service-1", "192.168.25.111",
+      "pong", "pong", Arrays.asList("jvm"), "192.168.25.111", 9877);
   
-  private static final Service SERVICE2 = new Service("pong-service-2", "192.168.25.112", "pong", "pong", Arrays.asList("jvm"), 9877);
+  private static final Service SERVICE2 = new Service("pong-service-2", "192.168.25.112",
+      "pong", "pong", Arrays.asList("jvm"), "192.168.25.112", 9877);
   
   
   @Test(expected=NoServiceAvailable.class)
@@ -76,19 +78,19 @@ public class RoundRobinLoadBalancerTest {
     balancer.init();
     
     balancer.withNextEndpoint((host, port) -> {
-      assertEquals(host, SERVICE1.getAddress());
+      assertEquals(host, SERVICE1.getServiceAddress());
       assertEquals(port, new Integer(SERVICE1.getServicePort()));
       return null;
     });
     
     balancer.withNextEndpoint((host, port) -> {
-      assertEquals(host, SERVICE2.getAddress());
+      assertEquals(host, SERVICE2.getServiceAddress());
       assertEquals(port, new Integer(SERVICE2.getServicePort()));
       return null;
     });
     
     balancer.withNextEndpoint((host, port) -> {
-      assertEquals(host, SERVICE1.getAddress());
+      assertEquals(host, SERVICE1.getServiceAddress());
       assertEquals(port, new Integer(SERVICE1.getServicePort()));
       return null;
     });
