@@ -9,13 +9,13 @@ maven
   <dependency>
     <groupId>com.totango</groupId>
     <artifactId>discovery-agent</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
   </dependency>
 
 ```
 gradle
 ```
-'com.totango:discovery-agent:0.2.0'
+'com.totango:discovery-agent:0.2.1'
 
 ```
 
@@ -67,7 +67,7 @@ if (response.isPresent() && response.get().size() > 0) {
 	// choose one from the list
 	Service service = services.get(0);
 		
-	String url = String.format("http://%s:%d", service.getAddress(), service.getServicePort());
+	String url = String.format("http://%s:%d", service.getServiceAddress(), service.getServicePort());
 	Request request = new Request.Builder().url(url).build();
 	Response response = httpClient.newCall(request).execute();
 	...
