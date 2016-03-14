@@ -56,6 +56,22 @@ public class ConsulClientTest {
 
   private final ServiceRequest serviceRequest = request().forService("whatever").build();
 
+  @Test
+  public void discoverServiceWithServiceNameShouldRetrunTheService() throws Exception {
+    withMockedResponse(new MockResponse().setBody(SERVICE_HEALTH_2_NODES_JSON), (
+        ConsulClient consulClient, MockWebServer server) -> {
+
+      Optional<ServiceGroup> response = consulClient.discoverService(SERVICE1.getServiceName());
+
+      String path = server.takeRequest().getPath();
+      String serviceName = path.substring(path.lastIndexOf('/') + 1, path.indexOf('?'));
+      assertEquals("Service name doesn't match", serviceName, SERVICE1.getServiceName());
+      
+      List<Service> expected = Arrays.asList(SERVICE1, SERVICE2);
+      assertEquals(expected, response.get().getServices());
+    });
+  }
+  
   @Test(expected=IllegalArgumentException.class)
   public void waitTimeoutShouldBeGreaterThan0() {
     ConsulClientFactory consulClientFactory = new ConsulClientFactory();

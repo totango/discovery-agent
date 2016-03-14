@@ -33,7 +33,9 @@ import com.totango.discoveryagent.model.Value;
 
 public class ConsulClient {
   
-  private static final String SERVICE_HEALTH_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&wait=%ds&passing";
+  private static final String SERVICE_HEALTH_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?passing";
+  
+  private static final String SERVICE_HEALTH_WAIT_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&wait=%ds&passing";
   
   private static final String SERVICE_HEALTH_WITH_TAG_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?index=%s&tag=%s&wait=%ds&passing";
   
@@ -65,6 +67,11 @@ public class ConsulClient {
     this.waitTimeInSec = waitTimeInSec;
   }
   
+  public Optional<ServiceGroup> discoverService(String serviceName) throws IOException {
+    String url = String.format(SERVICE_HEALTH_URL_ENDPOINT, host, port, serviceName);
+    return getServiceGroup(url);
+  }
+  
   public Optional<ServiceGroup> discoverService(ServiceRequest request) throws IOException {
     String url = buildDiscoverServiceUrl(request);
     return getServiceGroup(url);
@@ -72,7 +79,7 @@ public class ConsulClient {
   
   private String buildDiscoverServiceUrl(ServiceRequest request) {
     if (request.tag() == null) {
-      return String.format(SERVICE_HEALTH_URL_ENDPOINT, host, port, request.serviceName(), request.index(), waitTimeInSec);
+      return String.format(SERVICE_HEALTH_WAIT_URL_ENDPOINT, host, port, request.serviceName(), request.index(), waitTimeInSec);
     }
     
     return String.format(SERVICE_HEALTH_WITH_TAG_URL_ENDPOINT, host, port,

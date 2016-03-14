@@ -54,7 +54,7 @@ public class DiscoveryServiceTest {
   public void getServiceShouldReturnEmptyServiceListForUnknownService() throws Exception {
     
     ConsulClient consulClient = mock(ConsulClient.class);
-    when(consulClient.discoverService(any())).thenReturn(Optional.empty());
+    when(consulClient.discoverService(any(ServiceRequest.class))).thenReturn(Optional.empty());
     
     DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i, TimeUnit.MILLISECONDS);
     List<Service> services = discoveryService.getServices("unknown-service");
@@ -68,7 +68,7 @@ public class DiscoveryServiceTest {
     ServiceGroup serviceGroup = new ServiceGroup(expected, Optional.empty());
     
     ConsulClient consulClient = mock(ConsulClient.class);
-    when(consulClient.discoverService(any())).thenReturn(Optional.of(serviceGroup));
+    when(consulClient.discoverService(any(ServiceRequest.class))).thenReturn(Optional.of(serviceGroup));
     
     DiscoveryService discoveryService = new DiscoveryService(consulClient, 0, i -> i, TimeUnit.MILLISECONDS);
     List<Service> services = discoveryService.getServices("pong");
@@ -85,7 +85,7 @@ public class DiscoveryServiceTest {
     ServiceGroup singleServiceGroup = new ServiceGroup(singleService, Optional.empty());
     
     ConsulClient consulClient = mock(ConsulClient.class);
-    when(consulClient.discoverService(any()))
+    when(consulClient.discoverService(any(ServiceRequest.class)))
       .thenReturn(Optional.of(twoServiceGroup));
     
     final List<Service> services = new ArrayList<>();
@@ -107,7 +107,7 @@ public class DiscoveryServiceTest {
       assertEquals(twoServices, services);
     }
 
-    when(consulClient.discoverService(any()))
+    when(consulClient.discoverService(any(ServiceRequest.class)))
       .thenReturn(Optional.of(singleServiceGroup));
     
     await().pollInterval(new Duration(1, MILLISECONDS))
