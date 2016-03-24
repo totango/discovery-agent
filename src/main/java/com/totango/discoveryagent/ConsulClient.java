@@ -21,6 +21,9 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -32,6 +35,8 @@ import com.totango.discoveryagent.model.ServiceGroup;
 import com.totango.discoveryagent.model.Value;
 
 public class ConsulClient {
+  
+  private static final Logger Logger =  LoggerFactory.getLogger(ConsulClient.class);
   
   private static final String SERVICE_HEALTH_URL_ENDPOINT = "http://%s:%d/v1/health/service/%s?passing";
   
@@ -69,12 +74,12 @@ public class ConsulClient {
   
   public Optional<ServiceGroup> discoverService(String serviceName) throws IOException {
     String url = String.format(SERVICE_HEALTH_URL_ENDPOINT, host, port, serviceName);
-    return getServiceGroup(url);
+    return getServiceGroup(url, serviceName);
   }
   
   public Optional<ServiceGroup> discoverService(ServiceRequest request) throws IOException {
     String url = buildDiscoverServiceUrl(request);
-    return getServiceGroup(url);
+    return getServiceGroup(url, request.serviceName());
   }
   
   private String buildDiscoverServiceUrl(ServiceRequest request) {
@@ -86,7 +91,7 @@ public class ConsulClient {
         request.serviceName(), request.index(), request.tag(), waitTimeInSec);
   }
 
-  private Optional<ServiceGroup> getServiceGroup(String url) throws IOException {
+  private Optional<ServiceGroup> getServiceGroup(String url, String serviceName) throws IOException {
     Request request = new Request.Builder()
       .url(url)
       .build();
@@ -94,6 +99,9 @@ public class ConsulClient {
     Response response = okClient.newCall(request).execute();
     if (response.isSuccessful()) {
       return toServiceGroup(response);
+    } else {
+      Logger.warn(String.format("Failed to get service: %s, status-code: %s, message: %s",
+          serviceName, response.code(), response.body().string()));
     }
     return Optional.empty();
   }
@@ -111,15 +119,15 @@ public class ConsulClient {
   
   public Optional<Value> keyValue(String key) throws IOException {
     String url = String.format(KEY_VALUE_URL_ENDPOINT, host, port, key);
-    return value(url);
+    return value(url, key);
   }
   
   public Optional<Value> keyValue(String key, String index) throws IOException {
     String url = String.format(KEY_VALUE_WAIT_URL_ENDPOINT, host, port, key, index, waitTimeInSec);
-    return value(url);
+    return value(url, key);
   }
   
-  private Optional<Value> value(String url) throws IOException {
+  private Optional<Value> value(String url, String key) throws IOException {
     Request request = new Request.Builder()
       .url(url)
       .build();
@@ -130,6 +138,9 @@ public class ConsulClient {
       if (!value.isEmpty()) {
         return Optional.ofNullable(value.get(0));
       }
+    } else {
+      Logger.warn(String.format("Failed to get key: %s, status-code: %s, message: %s",
+          key, response.code(), response.body().string()));
     }
     return Optional.empty();
   }
