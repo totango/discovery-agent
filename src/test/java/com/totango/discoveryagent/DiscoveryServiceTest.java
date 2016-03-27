@@ -128,7 +128,7 @@ public class DiscoveryServiceTest {
     ServiceGroup singleServiceGroup = new ServiceGroup(singleService, Optional.empty());
     
     ConsulClient consulClient = mock(ConsulClient.class);
-    when(consulClient.discoverService(any()))
+    when(consulClient.discoverService(any(ServiceRequest.class)))
       .thenThrow(UnknownHostException.class)
       .thenThrow(UnknownHostException.class)
       .thenThrow(UnknownHostException.class)
