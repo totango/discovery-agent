@@ -18,6 +18,7 @@ package com.totango.discoveryagent;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,11 +49,15 @@ public class ConsulClient {
   
   private static final String KEY_VALUE_WAIT_URL_ENDPOINT = "http://%s:%d/v1/kv/%s?index=%s&wait=%ds&passing";
   
+  private static final String DATACENTER_URL_ENDPOINT = "http://%s:%d/v1/catalog/datacenters";
+  
   private static final String INDEX_HEADER_NAME = "X-Consul-Index";
   
   public static final Type SERVICE_LIST_TYPE = new TypeToken<List<Service>>(){}.getType();
   
   public static final Type VALUE_LIST_TYPE = new TypeToken<List<Value>>(){}.getType();
+  
+  public static final Type DC_LIST_TYPE = new TypeToken<List<String>>(){}.getType();
   
   private final OkHttpClient okClient;
   
@@ -148,6 +153,23 @@ public class ConsulClient {
   private List<Value> toValue(Response response) throws IOException {
     String message = response.body().string();
     return gson.fromJson(message, VALUE_LIST_TYPE);
+  }
+  
+  public List<String> datacenters() throws IOException {
+    String url = String.format(DATACENTER_URL_ENDPOINT, host, port);
+    Request request = new Request.Builder()
+      .url(url)
+      .build();
+  
+    Response response = okClient.newCall(request).execute();
+    if (response.isSuccessful()) {
+      String message = response.body().string();
+      return gson.fromJson(message, DC_LIST_TYPE);
+    } else {
+      Logger.warn(String.format("Failed to get dc list status-code: %s, message: %s",
+          response.code(), response.body().string()));
+      return Collections.emptyList();
+    }
   }
   
 }

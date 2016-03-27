@@ -34,6 +34,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.totango.discoveryagent.model.Service;
 import com.totango.discoveryagent.model.ServiceGroup;
 import com.totango.discoveryagent.model.Value;
@@ -255,6 +256,16 @@ public class ConsulClientTest {
       final Map<String, String> keyValueMap = pathKeyValue(path);
       assertEquals("Tag doesn't match", "10", keyValueMap.get("index"));
       assertEquals("Index doesn't match", "300s", keyValueMap.get("wait"));
+    });
+  }
+  
+  @Test
+  public void datacentersShouldReturnList() throws Exception {
+    withMockedResponse(new MockResponse().setBody("[\"dc1\",\"dc2\"]"), 200, (ConsulClient consulClient,
+        MockWebServer server) -> {
+
+      List<String> datacenters = consulClient.datacenters();
+      assertEquals("Datacenters don't match", Lists.newArrayList("dc1", "dc2"), datacenters);
     });
   }
 
